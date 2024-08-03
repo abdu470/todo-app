@@ -1,11 +1,26 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/router';
 
-export default function Signup() {
+const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      setError("Passwords don't match!");
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+
+
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: {
@@ -14,42 +29,99 @@ export default function Signup() {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
-    if (res.ok) {
-      alert(data.message); 
-    } else {
-      alert(data.message); 
+    if(res){
+      console.log("result fetched");
+    }
+
+    try {
+      const data = await res.json();
+      if(data){
+        console.log("data Fetched");
+      }
+
+      if (res.ok) {
+        console.log("Signup successful, redirecting to signin");
+        router.push('/auth/signin');
+      } else {
+        console.log(data.message);
+        setError('Something went wrong');
+      }
+    } catch (err) {
+      console.log(err.message);
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
+    <div style={styles.container}>
+      <h2>Sign Up</h2>
+      <form onSubmit={handleSignUp} style={styles.form}>
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          style={styles.input}
           required
-          className="block w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          style={styles.input}
           required
-          className="block w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
         />
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-colors"
-        >
-          Sign Up
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          style={styles.input}
+          required
+        />
+        {error && <p style={styles.error}>{error}</p>}
+        <button type="submit" style={styles.button} disabled={loading}>
+          {loading ? 'Signing Up...' : 'Sign Up'}
         </button>
       </form>
     </div>
   );
-}
+};
 
+const styles = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100vh',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '300px',
+  },
+  input: {
+    marginBottom: '10px',
+    padding: '10px',
+    fontSize: '16px',
+  },
+  button: {
+    padding: '10px',
+    fontSize: '16px',
+    backgroundColor: '#0070f3',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+  },
+  error: {
+    color: 'red',
+    marginBottom: '10px',
+  },
+};
+
+export default SignUp;
