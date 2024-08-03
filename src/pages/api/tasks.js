@@ -1,4 +1,4 @@
-import Tasks from '../../models/Task';
+import Task from '../../models/Task';
 import connect from '../../utils/db';
 
 // eslint-disable-next-line import/no-anonymous-default-export
@@ -8,13 +8,13 @@ export default async (request, response) => {
     if (request.method === 'POST') {
         try {
             const { title, description, dueDate, priority, category } = request.body;
-            const existingTask = await Tasks.findOne({ title });
+            const existingTask = await Task.findOne({ title });
 
             if (existingTask) {
                 console.log("Task already exists");
                 return response.status(400).json({ message: 'Task already exists' });
             } else {
-                const newTask = new Tasks({ title, description, dueDate, priority, category });
+                const newTask = new Task({ title, description, dueDate, priority, category });
                 await newTask.save();
                 console.log("Task added successfully");
                 return response.status(201).json({ message: 'Task added successfully' });
@@ -29,7 +29,7 @@ export default async (request, response) => {
             const update = { description, dueDate, priority, category };
             const filter = { title };
             const options = { new: true }; 
-            const updateTask = await Tasks.findOneAndUpdate(filter, update, options);
+            const updateTask = await Task.findOneAndUpdate(filter, update, options);
 
             if (!updateTask) {
                 console.log("Task not updated");
@@ -45,7 +45,7 @@ export default async (request, response) => {
     } else if (request.method === 'DELETE') {
         try {
             const { title } = request.body;
-            const deleteTask = await Tasks.findOneAndDelete({ title });
+            const deleteTask = await Task.findOneAndDelete({ title });
 
             if (!deleteTask) {
                 console.log("Task not found for deletion");
@@ -60,7 +60,7 @@ export default async (request, response) => {
         }
     } else if (request.method === 'GET') {
         try {
-            const allTasks = await Tasks.find();
+            const allTasks = await Task.find();
             console.log("All tasks fetched successfully");
             return response.status(200).json({ tasks: allTasks });
         } catch (err) {
