@@ -1,12 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../../../models/User';
-import db from '../../../utils/db';
+import user from '../../../model/User';
+import connect from '../../../utils/db';
 
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default async(req, res) =>{
 
-        await db.connect();
+        await connect();
         
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -28,4 +29,3 @@ export default async(req, res) =>{
 
 
 //export default handler;
-
