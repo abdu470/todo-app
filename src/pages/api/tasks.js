@@ -1,55 +1,73 @@
-import Task from '../../../models/Task';
-import db from '../../../utils/db';
+import Tasks from '../../models/Task';
+import connect from '../../utils/db';
 
-export default async (req, res) => {
-  const { method } = req;
+// eslint-disable-next-line import/no-anonymous-default-export
+export default async (request, response) => {
+    await connect();
 
-  await db.connect();
+    if (request.method === 'POST') {
+        try {
+            const { title, description, dueDate, priority, category } = request.body;
+            const existingTask = await Tasks.findOne({ title });
 
-  switch (method) {
-    case 'GET':
-      try {
-        const tasks = await Task.find({});
-        res.status(200).json(tasks);
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-      break;
+            if (existingTask) {
+                console.log("Task already exists");
+                return response.status(400).json({ message: 'Task already exists' });
+            } else {
+                const newTask = new Tasks({ title, description, dueDate, priority, category });
+                await newTask.save();
+                console.log("Task added successfully");
+                return response.status(201).json({ message: 'Task added successfully' });
+            }
+        } catch (err) {
+            console.error("Internal server error while adding task:", err);
+            return response.status(500).json({ message: 'Failed to add task' });
+        }
+    } else if (request.method === 'PUT') {
+        try {
+            const { title, description, dueDate, priority, category } = request.body;
+            const update = { description, dueDate, priority, category };
+            const filter = { title };
+            const options = { new: true }; 
+            const updateTask = await Tasks.findOneAndUpdate(filter, update, options);
 
-    case 'POST':
-      try {
-        const task = new Task(req.body);
-        await task.save();
-        res.status(201).json(task);
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-      break;
+            if (!updateTask) {
+                console.log("Task not updated");
+                return response.status(404).json({ message: 'Task not found' });
+            } else {
+                console.log("Task updated successfully");
+                return response.status(200).json({ message: 'Task updated successfully' });
+            }
+        } catch (err) {
+            console.error("Internal server error while updating task:", err);
+            return response.status(500).json({ message: 'Failed to update task' });
+        }
+    } else if (request.method === 'DELETE') {
+        try {
+            const { title } = request.body;
+            const deleteTask = await Tasks.findOneAndDelete({ title });
 
-    case 'PUT':
-      try {
-        const { id, ...data } = req.body;
-        const updatedTask = await Task.findByIdAndUpdate(id, data, { new: true });
-        res.status(200).json(updatedTask);
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-      break;
-
-    case 'DELETE':
-      try {
-        const { id } = req.body;
-        await Task.findByIdAndDelete(id);
-        res.status(200).json({ message: 'Task deleted' });
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-      break;
-
-    default:
-      res.status(405).json({ message: 'Method not allowed' });
-      break;
-  }
-
-  await db.disconnect();
-};
+            if (!deleteTask) {
+                console.log("Task not found for deletion");
+                return response.status(404).json({ message: 'Task not found' });
+            } else {
+                console.log("Task deleted successfully");
+                return response.status(200).json({ message: 'Task deleted successfully' });
+            }
+        } catch (err) {
+            console.error("Internal server error while deleting task:", err);
+            return response.status(500).json({ message: 'Failed to delete task' });
+        }
+    } else if (request.method === 'GET') {
+        try {
+            const allTasks = await Tasks.find();
+            console.log("All tasks fetched successfully");
+            return response.status(200).json({ tasks: allTasks });
+        } catch (err) {
+            console.error("Error fetching tasks:", err);
+            return response.status(500).json({ message: 'Error fetching tasks' });
+        }
+    } else {
+        return response.status(405).json({ message: 'Method not allowed' });
+    }
+}
